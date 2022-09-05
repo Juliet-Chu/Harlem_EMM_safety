@@ -1,0 +1,63 @@
+---
+title: "FLR"
+author: "Liye Zhu"
+date: "2022/8/4"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r library}
+#install.packages('logistf')
+#install.packages/('gplots')
+library(logistf)
+#library('gplots')
+```
+
+```{r read data}
+road <- read.csv(file = 'data/Edited/new_x.csv')
+```
+
+```{r fit}
+
+fit2<-logistf(data=road,num_ecollisions_B ~  + Number_Tra + num_pole + num_bus + num_subway + num_Encross + num_tree + pop + Vol + NonPed_D + TrafDir_A + TrafDir_T + RW_TYPE_10 + RW_TYPE_3 + RW_TYPE_4 + RW_TYPE_6 + RW_TYPE_7 + RW_TYPE_8 + RW_TYPE_9 + BikeLane_1 + BikeLane_11 + BikeLane_2 + BikeLane_3 + BikeLane_4 + num_pedS,firth=TRUE,pl=TRUE,control=logistf.control(maxit=100))
+
+summary(fit2)
+exp(coef(fit2))
+
+```
+
+```{r }
+table( road$num_ecollisions_B , fit2$predict>0.3) 
+```
+
+```{r predict}
+pre2 <- predict(fit2, spotify_followers_m = 10,
+    type = "response")
+pre2
+
+FLRpre <- fit2$predict
+
+FLRpre
+write.csv(FLRpre,file="data/Edited/FLRpred.csv",quote=F,row.names = F)
+
+```
+
+```{r ROC}
+#install.packages('PRROC')
+library(plotROC)
+
+rocplot <- ggplot(road, aes(m = fit2$predict, d = road$num_ecollisions_B))+ geom_roc(n.cuts=20,labels=FALSE)
+rocplot + style_roc(theme = theme_grey) + geom_rocci(fill="pink") 
+
+library(PRROC)
+PRROC_obj <- roc.curve(scores.class0 = fit2$predict, weights.class0=road$num_ecollisions_B,curve=TRUE)
+
+png(file="plot/ROC.png",width=600, height=350)
+
+plot(PRROC_obj)
+
+dev.off()
+```
